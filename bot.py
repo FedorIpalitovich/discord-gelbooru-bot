@@ -2,7 +2,6 @@ import settings
 import asyncio
 import gelbooru
 import discord
-from discord import *
 import logging
 from discord.ext import commands
 from typing import Optional, Literal
@@ -42,8 +41,8 @@ async def help_instructions(
 @bot.tree.command(name='search', description='search by tags')
 @discord.app_commands.describe( 
     tags='tags to search from (write with a space)',
-    offset='number of searched post, only from 0 to 20000',
-    random='randomizes searching',
+    offset='number of searched post, only from 1 to 20000',
+    random='randomizes search',
 )
 async def search_command(
     interaction: discord.Interaction,
@@ -51,7 +50,11 @@ async def search_command(
     offset: Optional[int],
     random: Optional[Literal['✅']],
 ) -> None:
-    await interaction.response.defer()
+    try:
+        await interaction.response.defer()
+    except Exception:
+        asyncio.sleep(0.1)
+        await interaction.response.defer()
 
     if offset is not None:
         if not 0 <= offset <= 20000:
@@ -66,7 +69,7 @@ async def search_command(
     else:
         nsfw: bool = interaction.channel.nsfw
     
-    await search_content(interaction, tags=tags, pid=offset, random=random,)
+    await search_content(interaction, tags=tags, pid=offset, random=random, nsfw=nsfw,)
     
 # ---
 
@@ -103,7 +106,7 @@ async def search_content(
 
     except Exception as e:
         await interaction.followup.send('error', ephemeral=True)
-        logging.critical(e)
+        logging.critical(e.__context__)
         return
 
     post_url = f'https://gelbooru.com/index.php?page=post&s=view&id={content['id']}'
@@ -111,15 +114,15 @@ async def search_content(
     """
     nextButton = discord.ui.Button(label='next', style=discord.ButtonStyle.green)
     randomButton = discord.ui.Button(label='random', style=discord.ButtonStyle.blurple)
-    geturlButton = discord.ui.Button(label='get url', style=discord.ButtonStyle.grey)
+    """
+    urlButton = discord.ui.Button(label='url', url=post_url)
     
     Buttons = discord.ui.View()
 
-    Buttons.add_item(nextButton)
-    Buttons.add_item(randomButton)
-    """
+    Buttons.add_item(urlButton)
+
     
-    await interaction.followup.send(content['content_url'])
+    await interaction.followup.send(content['content_url'], view=Buttons)
     return
 
 # bot startup terminal output

@@ -23,40 +23,49 @@ async def connect_to_gelbooru(
     tags_list = tags.split()
     tags = ''
     
+    if random:
+        pid = randint(0, 20000)
+    
     if not nsfw:
         for tag in tags_list:
             if tag.startswith('rating:'):
                 raise NotNSFWchannel
         tags_list.append('rating:general')
     
+    # autocomplete query tags
     autocompleted_tags: list[str] = list()
     for tag in tags_list:
         _ = await autocomplete(tag)
         autocompleted_tags.append(_)
     
-    # encode our query
+    # encode query tags
     for tag in autocompleted_tags:
-        tags += urllib.parse.quote(tag ,encoding='utf-8') + '+'
-        
+        tags += urllib.parse.quote(tag, encoding='utf-8') + '+'        
+
     request_url = f'https://gelbooru.com/index.php?page=dapi&s=post&q=index&json=1&limit=1&pid={pid}&tags={tags}'
     
     if api_key and user_id:
         request_url += f'&api_key={api_key}&user_id={user_id}'
     
-    response: requests.Response = requests.get(request_url)
-    if response.status_code != 200:
-        raise ConnectionError(f'Non-200 response from Gelbooru, got {response.status_code} instead')
+    json_response = await get_response(request_url)
     
-    try:
-        json_response: dict[str, ] = json.loads(response.text) # check for undefined tags
-    except json.decoder.JSONDecodeError:
-        raise Exception('JSONDecodeError')
-    
-    if 'post' not in json_response:
+    if json_response['@attributes']['count'] == 0:
         raise NoPostsFound
     
+    if 'post' not in json_response:
+        max_pid: int = json_response['@attributes']['count'] - 1
+        new_pid = int()
+        
+        if random:
+            new_pid = randint(0, max_pid)
+        else: new_pid = max_pid
+        
+        request_url = request_url.replace(f'&pid={pid}', f'&pid={new_pid}', 1)
+        
+        json_response = await get_response(request_url)
+        
     # some crutch idk (because of gelbooru json response)
-    elif isinstance(json_response['post'], dict):
+    if isinstance(json_response['post'], dict):
         content_data = [json_response['post']]
     else:
         content_data = json_response['post']
@@ -66,16 +75,17 @@ async def connect_to_gelbooru(
             'id': json_item['id'],
             'content_url': json_item['file_url'],
             'tags': ' '.join(autocompleted_tags),
+            'pid': pid,
         }
     
     return result
 
 
 async def autocomplete(tag: str) -> str:
-    if tag.startswith(('-', '~')) or tag.endswith('~') or '*' in tag:
+    if tag.startswith(('-', '~')) or tag.endswith('~') or '*' in tag or 'rating:' in tag:
         return tag
 
-    encoded_tag = urllib.parse.quote(tag)
+    encoded_tag = urllib.parse.quote(tag, encoding='utf-8')
     request_url = f'https://gelbooru.com/index.php?page=autocomplete2&term={encoded_tag}'
     try:
         response: requests.Response = requests.get(request_url)
@@ -85,15 +95,24 @@ async def autocomplete(tag: str) -> str:
         raise ConnectionError(f'Non-200 response from Gelbooru, got {response.status_code} instead')
 
     try:
-        autocompleted_tag_list: list[str] = list(_['value'] for _ in json.loads(response.text))
-        # Do not autocomplete tag if it is already a valid tag
-        if tag in autocompleted_tag_list:
-            autocompleted_tag = tag
-        else:
-            # first (most popular) tag
-            autocompleted_tag = autocompleted_tag_list[0]
-    except (IndexError, KeyError, json.decoder.JSONDecodeError):
-        raise NoPostsFound
+        autocompleted_tags: list[dict[str, ]] = json.loads(response.text)
+        return autocompleted_tags[0]['value'] # autocompleted tag
     
-    return autocompleted_tag
+    except (IndexError, KeyError,):
+        return tag # returns normal tag if autocomplete returns none
+    
+    except json.decoder.JSONDecodeError:
+        raise Exception('JSONDecodeError')
+    
 
+async def get_response(request_url: str) -> dict[str, ]:
+    response: requests.Response = requests.get(request_url)
+    if response.status_code != 200:
+        raise ConnectionError(f'Non-200 response from Gelbooru, got {response.status_code} instead')
+
+    try:
+        json_response: dict[str, ] = json.loads(response.text)
+    except json.decoder.JSONDecodeError:
+        raise Exception('JSONDecodeError')
+    
+    return json_response
