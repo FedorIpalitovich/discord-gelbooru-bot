@@ -10,6 +10,7 @@ intents.message_content = True
 
 # bot
 bot = commands.Bot(command_prefix='!', intents=intents)
+del intents
 
 # default logging
 discord.utils.setup_logging()

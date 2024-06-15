@@ -1,6 +1,9 @@
 from discord.ext import commands
 from discord.app_commands import AppCommand
 
+
+__all__ = None
+
 class Ping(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot: commands.Bot = bot
@@ -17,7 +20,8 @@ class Ping(commands.Cog):
         synced_commands = ''
         for command in commands_list:
             synced_commands += f' {command.name}'
-        await ctx.send(f'synced:{synced_commands}') # or just print(*commands_list)
+        await ctx.send(f'synced:{synced_commands}')
+        print('synced commands: ', *commands_list)
 #"""
 
 
