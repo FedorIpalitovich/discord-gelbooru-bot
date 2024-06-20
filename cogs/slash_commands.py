@@ -25,12 +25,6 @@ class SlashCommands(commands.Cog):
             elif lang == 'en':
                 await interaction.response.send_message('command /search works only on nsfw channels', ephemeral=True,)
     
-    @discord.app_commands.command(name='recent', description='get popular recent tags')
-    async def recent(self, interaction: discord.Interaction) -> None:
-        await interaction.response.defer()
-        # //get tags
-        await interaction.followup.send('Not implemented')
-    
     # bot primary command
     @discord.app_commands.command(name='search', description='search for posts by tags', nsfw=True)
     @discord.app_commands.describe( 
@@ -49,7 +43,6 @@ class SlashCommands(commands.Cog):
             await interaction.response.defer()
         except discord.errors.NotFound:
             raise ('failed to defer an interaction')
-        print('command')
         
         if random is None: random = False
         else: random = True

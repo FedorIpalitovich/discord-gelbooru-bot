@@ -1,9 +1,5 @@
 .env
-.venv
-env/
-venv/
 __pycache__/
-*.log
 todo
 .vscode
 .cogs/__pycache__/

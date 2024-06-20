@@ -25,7 +25,6 @@ class ButtonsCallback():
     
     @staticmethod
     async def button_callback(interaction: discord.Interaction, random: bool) -> None:
-        print('button')
         await interaction.response.defer()
         fields: list[discord.embeds._EmbedFieldProxy] = interaction.message.embeds[0].fields
         tags: str = fields[0].value
@@ -89,7 +88,7 @@ async def ds_request(
     try:
         content: dict[str, ] = await request.get_post()
     except NoPostsFound:
-        await interaction.channel.send('no posts found')
+        await interaction.followup.send('no posts found')
         return None
     except ClientConnectionError:
         await interaction.channel.send('no connection to Gelbooru')

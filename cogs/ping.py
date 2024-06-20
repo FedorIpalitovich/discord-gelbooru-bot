@@ -12,7 +12,7 @@ class Ping(commands.Cog):
     async def ping(self, ctx: commands.context.Context):
         await ctx.reply('pong')
 
-#"""
+"""
 # sync command example (refresh discord on pc - Ctrl+R)
     @commands.command('sync')
     async def sync_commands(self, ctx: commands.context.Context):
@@ -22,7 +22,7 @@ class Ping(commands.Cog):
             synced_commands += f' {command.name}'
         await ctx.send(f'synced:{synced_commands}')
         print('synced commands: ', *commands_list)
-#"""
+"""
 
 
 async def setup(bot: commands.Bot) -> None:

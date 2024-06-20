@@ -10,7 +10,6 @@ intents.message_content = True
 
 # bot
 bot = commands.Bot(command_prefix='!', intents=intents)
-del intents
 
 # default logging
 discord.utils.setup_logging()
@@ -21,6 +20,7 @@ async def on_ready() -> None:
     color = '\033[93m'
     end = '\033[0m'
     print(f'{color}{bot.user.name}{end} bot is now running.')
+    await bot.tree.sync() # do not use commands syncing on startup!!!
 
 # loading cogs via load_extension
 async def load_cogs() -> None:
